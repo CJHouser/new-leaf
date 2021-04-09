@@ -24,14 +24,14 @@ function authenticate(permissions) {
 /**
  *  Deletes messages containing profanity from a channel
  *  @param {Message} message The message where cleaning begins.
- *  @return {Message} The last cleaned message in the batch.
+ *  @return {Collection(Message), Message} The last cleaned message in the batch.
  */
 async function clean(message) {
   try {
     const options = {limit: 100, before: message.id};
     const messages = await message.channel.messages.fetch(options);
-    messages.map(m => {filter.isProfane(m.content) && m.delete();});
-    return messages.last();
+    const profaneMessages = messages.filter(m => filter.isProfane(m.content));
+    return {profaneMessages: profaneMessages, lastInBatch: messages.last()};
   }
   catch(err) {
     console.log(`routines.js: clean() - ${err}`);
