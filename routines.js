@@ -1,14 +1,14 @@
-module.exports = {authenticate, clean, validate};
+module.exports = {authorize, clean, validate};
 
 const Filter = require("bad-words");
 const filter = new Filter();
 
 /**
- *  Checks if a user has enough guild privileges to execute bot commands.
+ *  Checks if a user has enough guild privileges to execute bot commands
  *  @param {Permissions} permissions Permissions of the sender.
  *  @return {boolean} The user has sufficient privileges.
  */
-function authenticate(permissions) {
+function authorize(permissions) {
   try {
     const admin = permissions.has("ADMINISTRATOR");
     const manage_messages = permissions.has("MANAGE_MESSAGES", false);
@@ -22,20 +22,20 @@ function authenticate(permissions) {
 }
 
 /**
- *  Deletes messages containing profanity from a channel
+ *  Deletes messages containing profanity that are older than a given message
  *  @param {Message} message The message where cleaning begins.
- *  @return {Collection(Message), Message} The last cleaned message in the batch.
  */
 async function clean(message) {
   try {
-    const options = {limit: 100, before: message.id};
-    const messages = await message.channel.messages.fetch(options);
-    const profaneMessages = messages.filter(m => filter.isProfane(m.content));
-    return {profaneMessages: profaneMessages, lastInBatch: messages.last()};
+    message.channel.messages.fetch({limit: 100, before: message.id})
+      .then(messages => {
+        if (messages.last()) clean(messages.last());
+        return messages.filter(m => filter.isProfane(m.content));
+      })
+      .then(profaneMessages => profaneMessages.forEach(pm => pm.delete()));
   }
-  catch(err) {
+  catch (err) {
     console.log(`routines.js: clean() - ${err}`);
-    return null;
   }
 }
 
@@ -46,11 +46,11 @@ async function clean(message) {
  */
 function validate(message) {
   try {
-    const isTextChannel = message.channel.type === "text";
-    const isCommand = message.content === "!clean";
-    return isTextChannel && isCommand;
+    const command = message.content === "!clean";
+    const textChannel = message.channel.type === "text";
+    return command && textChannel;
   }
-  catch(err) {
+  catch (err) {
     console.log(`routines.js: validate() - ${err}`);
     return false;
   }

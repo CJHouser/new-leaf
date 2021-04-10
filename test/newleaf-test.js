@@ -3,22 +3,25 @@ const routines = require("../routines.js");
 
 describe("routines.clean()", () => {
   describe("# Bad object argument", () => {
-    it("should return null for null arguments", async () => {
-      const messageMock = null;
-      assert.equal(await routines.clean(messageMock), null);
+    it("should return null for null MessageManager", async () => {
+      const messageID = "text";
+      const messageManMock = null;
+      assert.equal(await routines.clean(messageManMock), null);
     });
-    it("should return null for undefined arguments", async () => {
-      const messageMock = undefined;
-      assert.equal(await routines.clean(messageMock), null);
+    it("should return null for undefined MessageManager", async () => {
+      const messageID = "text";
+      const messageManMock = undefined;
+      assert.equal(await routines.clean(messageManMock), null);
     });
-    it("should return null for empty object argument", async () => {
-      const messageMock = {};
-      assert.equal(await routines.clean(messageMock), null);
+    it("should return null for empty object MessageManager", async () => {
+      const messageID = "text";
+      const messageManMock = {};
+      assert.equal(await routines.clean(messageManMock), null);
     });
   });
 });
 
-describe("routines.authenticate()", () => {
+describe("routines.authorize()", () => {
   let permissionsMock = {
     bitfield: 0b000,
     has: function (str, flag) {
@@ -36,37 +39,37 @@ describe("routines.authenticate()", () => {
   };
   describe("# Authentication", () => {
     it("should return false non-privileged", () => {
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
     it("should return false for MANAGE_MESSAGES, but no READ_MESSAGE_HISTORY", () => {
       permissionsMock.bitfield = 0b010;
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
     it("should return false for READ_MESSAGE_HISTORY, but no MANAGE_MESSAGES", () => {
       permissionsMock.bitfield = 0b001;
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
     it("should return true for administrators", () => {
       permissionsMock.bitfield = 0b100;
-      assert.equal(routines.authenticate(permissionsMock), true);
+      assert.equal(routines.authorize(permissionsMock), true);
     });
     it("should return true for MANAGE_MESSAGES and READ_MESSAGE_HISTORY", () => {
       permissionsMock.bitfield = 0b011;
-      assert.equal(routines.authenticate(permissionsMock), true);
+      assert.equal(routines.authorize(permissionsMock), true);
     });
   });
   describe("# Bad object argument", () => {
     it("should return false for null argument", () => {
       permissionsMock = null;
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
     it("should return false forundefined argument", () => {
       permissionsMock = undefined;
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
     it("should return false for empty argument", () => {
       permissionsMock = {};
-      assert.equal(routines.authenticate(permissionsMock), false);
+      assert.equal(routines.authorize(permissionsMock), false);
     });
   });
 });

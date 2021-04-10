@@ -11,22 +11,9 @@ client.on("ready", () => {
 });
 
 client.on("message", async message => {
-  if (!routines.authenticate(message.member.permissionsIn(message.channel))) return;
+  if (!routines.authorize(message.member.permissionsIn(message.channel))) return;
   if (!routines.validate(message)) return;
-  let messagesToDelete = new Discord.Collection();
-  let lastInBatch = message;
-  const options = {limit: 100, before: lastInBatch.id};
-  while (lastInBatch) {
-    const messagesToCheck = await message.channel.messages.fetch(options);
-    tuple = await routines.clean(lastInBatch);
-    lastInBatch = tuple.lastInBatch;
-    messagesToDelete = messagesToDelete.concat(tuple.profaneMessages);
-  }
-  // Bulk deletion only works for messages younger than 14 days
-  const deletedMessages = await message.channel.bulkDelete(messagesToDelete, true);
-  // Difference returns the messages older than 14 days for one-by-one deletion
-  const olderMessagesToDelete = messagesToDelete.difference(deletedMessages);
-  olderMessagesToDelete.forEach(m => m.delete());
+  routines.clean(message);
 });
 
 client.login(process.env.DISCORD_TOKEN);
