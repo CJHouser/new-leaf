@@ -1,7 +1,9 @@
 // A bot that deletes old, profane messages from Dicord guild text channels
 
-const routines = require("./routines.js");
-require("dotenv").config();
+const Routines = require("./routines.js");
+const Cleaner = require("./Cleaner.js");
+
+require("dotenv").config({path: "../.env"});
 const Discord = require("discord.js");
 const client = new Discord.Client();
 
@@ -11,11 +13,11 @@ client.on("ready", () => {
 });
 
 client.on("message", message => {
-  if (!routines.authorize(message.member.permissionsIn(message.channel))) return;
-  if (!routines.validate(message)) return;
-  console.log("Started");
-  message.channel.send("Started");
-  routines.clean(message);
+  if (!Routines.authorize(message.member.permissionsIn(message.channel))) return;
+  if (!Routines.validate(message)) return;
+  console.log("Cleaning started");
+  initialMessage.channel.send("Cleaning started");
+  new Cleaner(message);
 });
 
 client.login(process.env.DISCORD_TOKEN);
