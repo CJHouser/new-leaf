@@ -1,3 +1,5 @@
+const Routines = require("../routines.js");
+
 const Filter = require("bad-words");
 let filter = new Filter();
 
@@ -9,27 +11,26 @@ class Cleaner {
    * @param {Message} commandMessage The message where cleaning begins.
    */
   constructor(initialMessage) {
+    this.initialMessage = initialMessage;
     this.cleanCalls = 0;
     this.options = {limit: 100};
+    initialMessage.reply("Cleaning started");
     this.clean(initialMessage);
   }
 
   async clean(precedingMessage) {
-    if (!precedingMessage || Object.keys(precedingMessage).length === 0) return;
+    if (Routines.badObject(precedingMessage)) return;
     this.options.before = precedingMessage.id;
     this.cleanCalls++;
     try {
-      var messages = await precedingMessage.channel.messages.fetch(this.options);
+      let messages = await precedingMessage.channel.messages.fetch(this.options);
       this.clean(messages.last());
       messages.filter(m => filter.isProfane(m.content)).forEach(m => m.delete());
     }
     catch (err) {
       console.log(err);
     }
-    if (--this.cleanCalls == 0) {
-      console.log("Cleaning finished");
-      precedingMessage.channel.send("Cleaning finished");
-    }
+    if (--this.cleanCalls == 0) this.initialMessage.reply("Cleaning finished");
   }
 }
 
