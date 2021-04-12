@@ -1,22 +1,6 @@
 const assert = require('assert');
-const routines = require("../routines.js");
-
-describe("routines.clean()", () => {
-  describe("# Bad object", () => {
-    it("should return null for null message", async () => {
-      const message = null;
-      assert.strictEqual(await routines.clean(message), null);
-    });
-    it("should return null for undefined message", async () => {
-      const message = undefined;
-      assert.strictEqual(await routines.clean(message), null);
-    });
-    it("should return null for empty object message", async () => {
-      const message = {};
-      assert.strictEqual(await routines.clean(message), null);
-    });
-  });
-});
+const routines = require("../src/routines.js");
+const Cleaner = require("../src/Cleaner.js")
 
 describe("routines.authorize()", () => {
   let permissions = {
@@ -100,6 +84,7 @@ describe("routines.validate()", () => {
       assert.strictEqual(routines.validate(message), false);
     });
   });
+
   // Discord API trims surrounding whitespace
   describe("$ Whitespace in command message", () => {
     it("should return false for leading whitespace",  () => {
@@ -112,4 +97,3 @@ describe("routines.validate()", () => {
     });
   });
 });
-
