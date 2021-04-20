@@ -1,5 +1,5 @@
-const MessageMock = require("./classes/MessageMock.js");
-const ChannelMock = require("./classes/ChannelMock.js");
+const MessageMock = require("./mocks/MessageMock.js");
+const ChannelMock = require("./mocks/ChannelMock.js");
 const Cleaner = require("../src/classes/Cleaner.js");
 
 var assert = require("assert");
