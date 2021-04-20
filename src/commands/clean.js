@@ -4,6 +4,8 @@ module.exports = {
   name: "!clean",
   description: "Removes messages containing profanity from a Discord text channel.",
   execute(message) {
-    new Cleaner(message);
+    message.reply("Cleaning started");
+    const cleaner = new Cleaner(message);
+    cleaner.start();
   }
 };

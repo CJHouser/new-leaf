@@ -21,6 +21,11 @@ function validate(message) {
   return message.channel.type === "text";
 }
 
+/**
+ * Checks if an object is empty, null, or undefined
+ * @param {Object} object A generic object.
+ * @returns The object is empty, null, or undefined.
+ */
 function badObject(object) {
   return !object || Object.keys(object).length === 0;
 }
