@@ -1,4 +1,3 @@
-const Routines = require("../routines.js");
 const BadWords = require("bad-words");
 
 class Cleaner {
