@@ -4,29 +4,103 @@ const Cleaner = require("../src/classes/Cleaner.js");
 
 let assert = require("assert");
 
-// Retrieves messages marked as deleted
-function getDeleted(chan) {
-  return chan.messages.coll.filter(m => m.deleted);
-}
-
-// Populate a mock channel with messages containing a set number of profanity
-const historySize = 111;
-const profaneDistribution = 10;
-const numberOfProfaneMessages = Math.ceil(historySize / profaneDistribution);
-let channel = new ChannelMock();
-{
-  let message = new MessageMock("!clean", channel);
-  channel.messages.coll.set(message.id, message);
-}
-for (let i = 0; i < historySize; i++) {
-  let content = (i % profaneDistribution == 0) ? "fuck " + i : "test " + i;
+/**
+ * Add messages to a channel.
+ * @param {ChannelMock} channel Mock channel to which message is added.
+ * @param {string} content Message content.
+ */
+function addMessage(channel, content) {
   let message = new MessageMock(content, channel);
   channel.messages.coll.set(message.id, message);
+  channel.messages.hi++;
 }
-const cleaner = new Cleaner(channel.messages.coll.first());
 
-// Reset the static IDs tied to each class before each test
-beforeEach(() => {
-  channel.messages.lastIndex = 0;
-  channel.messages.coll.map(m => m.deleted = false);
+/**
+ * Populate a ChannelMock with a distribution of profane messages
+ * @param {ChannelMock} channel Mock channel to which messages are added.
+ * @param {int} historySize The number of messages in the channel.
+ * @param {int} profaneInterval Set a profane message for every n messages.
+ * @returns {int} The number of profane messages in the channel.
+ */
+function populateChannel(channel, historySize, profaneInterval) {
+  for (let i = 0; i < historySize; i++) {
+    let content = (i % profaneInterval == 0) ? "fuck " + i : "test " + i;
+    addMessage(channel, content);
+  }
+  // The command message is the most recent and acts as the initial delimiter
+  addMessage(channel, "!clean");
+  return profaneInterval ? Math.ceil(historySize / profaneInterval) : 0;
+}
+
+/**
+ * Get the messages that were mock deleted.
+ * @param {ChannelMock} channel Mock channel containing the messages to fetch.
+ * @returns {Collection} A Collection of deleted messages.
+ */
+function getDeleted(channel) { return channel.messages.coll.filter(m => m.deleted) }
+
+/**
+ * Returns the chronologically latest message.
+ * @param {ChannelMock} channel Mock channel containing the message to fetch.
+ * @returns The last message in the collection.
+ */
+function getLatest(channel) { return channel.messages.coll.last() }
+
+/**
+ * Mock setup for each test.
+ * @param {int} historySize The number of messages in the channel.
+ * @param {int} profaneInterval Set a profane message for every n messages.
+ * @returns {Array} Cleaner object, Channel object, number of profane messages in the channel.
+ */
+function init(historySize, profaneInterval) {
+  let channel = new ChannelMock();
+  let profaneCount = populateChannel(channel, historySize, profaneInterval);
+  let cleaner = new Cleaner(getLatest(channel));
+  return [cleaner, channel, profaneCount];
+}
+
+describe("Cleaner.js: start()", () => {
+  it("should run for a channel with no message history", async () => {
+    let result = init(0, 0);
+    await result[0].start();
+    assert.strictEqual(getDeleted(result[1]).size, result[2]);
+    assert.strictEqual(getLatest(result[1]).deleted, false);
+    assert.strictEqual(result[1].messages.coll.size, 1);
+  });
+
+  it("should run for a channel with fewer messages than the max fetch limit", async () => {
+    let result = init(50, 3);
+    await result[0].start();
+  });
+
+  it("should not fail if the message history size is the same as the max fetch limit", async ()=> {
+    let result = init(100, 23);
+    await result[0].start();
+  });
+
+  it("should correctly mark profane delimiter messages", async () => {
+    let result = init(100, 1);
+    await result[0].start();
+    assert.strictEqual(result[1].messages.coll.first().deleted, true);
+  });
+
+  it("should work for channels with no profane messages", async () => {
+    let result = init(50, 0);
+    await result[0].start();
+    assert.strictEqual(getDeleted(result[1]).size, 0);
+  });
+
+  it(`should find n messages containing profanity`, async () => {
+    let result = init(200, 10);
+    await result[0].start();
+    assert.strictEqual(getDeleted(result[1]).size, result[2]);
+  });
+
+  // In case Discord.js Message.delete() behavior is changed in the future
+  it("should not remove elements from the collection", async () => {
+    let result = init(10, 0);
+    const initialSize = result[1].messages.coll.size;
+    await result[0].start()
+    assert.strictEqual(initialSize, result[1].messages.coll.size);
+  });
 });
