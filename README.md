@@ -19,7 +19,7 @@ Due to rate limits on the official Discord API, each guild is limited to a singl
 ## Dev Releases
 - [x] v0.1: Simple clean routine
 - [x] v0.2: User authorization
-- [x] ~~v0.3: Bulk deletion~~: **Messages older than two weeks can't be deleted due to the nature of the official Discord API**
+- [x] ~~v0.3: Bulk deletion~~: **Messages older than two weeks can't be bulk deleted due to the nature of the official Discord API**
 - [x] v0.4: Refactor: **First implementation using async**
 - [x] v0.5: Command dispatch: **Allows support of multiple commands**
 - [ ] v0.6: Unit testing
