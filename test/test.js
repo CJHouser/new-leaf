@@ -1,8 +1,10 @@
 const MessageMock = require("./mocks/MessageMock.js");
 const ChannelMock = require("./mocks/ChannelMock.js");
 const Cleaner = require("../src/classes/Cleaner.js");
+const MemberMock = require("./mocks/MemberMock.js");
 
 let assert = require("assert");
+const { authorize } = require("../src/commands/clean.js");
 
 /**
  * Add messages to a channel.
@@ -10,7 +12,7 @@ let assert = require("assert");
  * @param {string} content Message content.
  */
 function addMessage(channel, content) {
-  let message = new MessageMock(content, channel);
+  let message = new MessageMock(content, channel, new MemberMock(false, false, false));
   channel.messages.coll.set(message.id, message);
   channel.messages.hi++;
 }
@@ -64,7 +66,7 @@ describe("Cleaner.js: start()", () => {
     let result = init(0, 0);
     await result[0].start();
     assert.strictEqual(getDeleted(result[1]).size, result[2]);
-    assert.strictEqual(getLatest(result[1]).deleted, false);
+    assert(!getLatest(result[1]).deleted);
     assert.strictEqual(result[1].messages.coll.size, 1);
   });
 
@@ -81,7 +83,7 @@ describe("Cleaner.js: start()", () => {
   it("should correctly mark profane delimiter messages", async () => {
     let result = init(100, 1);
     await result[0].start();
-    assert.strictEqual(result[1].messages.coll.first().deleted, true);
+    assert(result[1].messages.coll.first().deleted);
   });
 
   it("should work for channels with no profane messages", async () => {
@@ -102,5 +104,31 @@ describe("Cleaner.js: start()", () => {
     const initialSize = result[1].messages.coll.size;
     await result[0].start()
     assert.strictEqual(initialSize, result[1].messages.coll.size);
+  });
+});
+
+describe("#clean.js: authorize()", () => {
+  let commandMessage = init(0, 0)[1].messages.coll.last();
+
+  it("should reject unprivileged member", () => {
+    commandMessage.member.setPermissions(false, false, false);
+    assert(!authorize(commandMessage));
+  });
+
+  it("should reject privileged, but insufficient, member", () => {
+    commandMessage.member.setPermissions(false, true, false);
+    assert(!authorize(commandMessage));
+    commandMessage.member.setPermissions(false, false, true);
+    assert(!authorize(commandMessage));
+  });
+
+  it("should accept privileged and sufficient member", () => {
+    commandMessage.member.setPermissions(false, true, true);
+    assert(authorize(commandMessage));
+  });
+
+  it("should accept admin member", () => {
+    commandMessage.member.setPermissions(true, false, false);
+    assert(authorize(commandMessage));
   });
 });

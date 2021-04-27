@@ -5,7 +5,7 @@ module.exports = {
     if (Math.random() < 0.5) message.reply("Heads!");
     else message.reply("Tails!");
   },
-  authorize(member) {
+  authorize(message) {
     return true;
   }
 };

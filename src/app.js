@@ -20,7 +20,7 @@ client.on("ready", () => {
 client.on("message", message => {
   if (!client.commands.has(message.content)) return;
   let command = client.commands.get(message.content);
-  if (command.authorize(message.member)) command.execute(message);
+  if (command.authorize(message)) command.execute(message);
 });
 
 client.login(process.env.DISCORD_TOKEN);

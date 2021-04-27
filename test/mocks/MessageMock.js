@@ -1,11 +1,12 @@
 class MessageMock {
   static nextMessageID = 0;
 
-  constructor(content, channel) {
+  constructor(content, channel, member) {
     this.content = content;
     this.channel = channel;
     this.id = MessageMock.nextMessageID++;
     this.deleted = false;
+    this.member = member;
   }
 
   async delete() {

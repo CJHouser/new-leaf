@@ -9,11 +9,11 @@ module.exports = {
     await cleaner.start();
     message.reply("Cleaning finished.");
   },
-  authorize(member) {
-    const permissions = member.permissionsIn(message.channel);
-    const admin = permissions.has("ADMINISTRATOR");
-    const manage_messages = permissions.has("MANAGE_MESSAGES", false);
-    const read_message_history = permissions.has("READ_MESSAGE_HISTORY", false);
-    return admin || (manage_messages && read_message_history);
+  authorize(message) {
+    const permissions = message.member.permissionsIn(message.channel);
+    // The second parameter of .has() allows admin privileges to override
+    const manage_messages = permissions.has("MANAGE_MESSAGES", true);
+    const read_message_history = permissions.has("READ_MESSAGE_HISTORY", true);
+    return manage_messages && read_message_history;
   }
 };
