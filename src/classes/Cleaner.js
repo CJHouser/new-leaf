@@ -17,11 +17,8 @@ class Cleaner {
     var message = this.initialMessage;
     while (message) {
       options.before = message.id;
-      try {
-        var messages = await message.channel.messages.fetch(options);
-        messages.filter(m => this.rules.isProfane(m.content)).forEach(m => m.delete());
-      }
-      catch (err) { console.log(err) }
+      var messages = await message.channel.messages.fetch(options);
+      messages.filter(m => this.rules.isProfane(m.content)).forEach(m => m.delete());
       message = messages.last();
     }
   }
