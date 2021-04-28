@@ -7,10 +7,15 @@ class MessageMock {
     this.id = MessageMock.nextMessageID++;
     this.deleted = false;
     this.member = member;
+    this.lastReply = null;
   }
 
   async delete() {
     this.deleted = true;
+  }
+  
+  async reply(content) {
+    this.lastReply = content;
   }
 }
 

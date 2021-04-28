@@ -10,7 +10,16 @@ class MemberMock {
   permissionsIn(channel) {
     return {
       has: (perm, adminOverride) => {
-        return this.permissions[perm] || (adminOverride && this.permissions["ADMINISTRATOR"])
+        let permitted = true;
+        if (Array.isArray(perm)) {
+          for (let p of perm) {
+            if (!this.permissions[p]) permitted = false;
+          }
+        }
+        else {
+          permitted = this.permissions[perm];
+        }
+        return permitted || (adminOverride && this.permissions["ADMINISTRATOR"])
       }
     }
   }

@@ -1,5 +1,6 @@
 // A bot that deletes old, profane messages from Dicord guild text channels
 
+
 require("dotenv").config({path: "../.env"});
 const fs = require("fs");
 const Discord = require("discord.js");
@@ -18,9 +19,8 @@ client.on("ready", () => {
 });
 
 client.on("message", message => {
-  if (!client.commands.has(message.content)) return;
-  let command = client.commands.get(message.content);
-  if (command.authorize(message)) command.execute(message);
+  let command = client.commands.get(message.content.split(' ')[0]);
+  if (command && command.authorize(message)) command.execute(message);
 });
 
 client.login(process.env.DISCORD_TOKEN);

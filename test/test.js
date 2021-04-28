@@ -3,8 +3,9 @@ const ChannelMock = require("./mocks/ChannelMock.js");
 const Cleaner = require("../src/classes/Cleaner.js");
 const MemberMock = require("./mocks/MemberMock.js");
 
+let parse = require("minimist");
 let assert = require("assert");
-const { authorize } = require("../src/commands/clean.js");
+const { authorize, execute } = require("../src/commands/clean.js");
 
 /**
  * Add messages to a channel.
@@ -26,11 +27,11 @@ function addMessage(channel, content) {
  */
 function populateChannel(channel, historySize, profaneInterval) {
   for (let i = 0; i < historySize; i++) {
-    let content = (i % profaneInterval == 0) ? "fuck " + i : "test " + i;
+    let content = (i % profaneInterval == 0) ? "alpha " + i : "test " + i;
     addMessage(channel, content);
   }
   // The command message is the most recent and acts as the initial delimiter
-  addMessage(channel, "!clean");
+  addMessage(channel, "!clean alpha");
   return profaneInterval ? Math.ceil(historySize / profaneInterval) : 0;
 }
 
@@ -57,78 +58,102 @@ function getLatest(channel) { return channel.messages.coll.last() }
 function init(historySize, profaneInterval) {
   let channel = new ChannelMock();
   let profaneCount = populateChannel(channel, historySize, profaneInterval);
-  let cleaner = new Cleaner(getLatest(channel));
+  let cleaner = new Cleaner(getLatest(channel), {
+    _: ["alpha"],
+    quotes: false,
+    q: false,
+    blocks: false,
+    b: false,
+    links: false,
+    l: false,
+  });
   return [cleaner, channel, profaneCount];
 }
 
 describe("Cleaner.js: start()", () => {
-  it("should run for a channel with no message history", async () => {
+  it("runs for a channel with no message history", async () => {
     let result = init(0, 0);
     await result[0].start();
-    assert.strictEqual(getDeleted(result[1]).size, result[2]);
-    assert(!getLatest(result[1]).deleted);
-    assert.strictEqual(result[1].messages.coll.size, 1);
+    assert.strictEqual(getDeleted(result[1]).size, 0);
+    assert(!getLatest(result[1]).deleted); // command message is not deleted
   });
 
-  it("should run for a channel with fewer messages than the max fetch limit", async () => {
+  it("runs for a channel with fewer messages than the max fetch limit", async () => {
     let result = init(50, 3);
     await result[0].start();
+    // Add a checked field to each message in order to verify?
   });
 
-  it("should not fail if the message history size is the same as the max fetch limit", async ()=> {
+  it("runs if the message history size is the same as the max fetch limit", async ()=> {
     let result = init(100, 23);
     await result[0].start();
+    // Add a checked boolean to each message in order to verify?
   });
 
-  it("should correctly mark profane delimiter messages", async () => {
-    let result = init(100, 1);
-    await result[0].start();
-    assert(result[1].messages.coll.first().deleted);
-  });
-
-  it("should work for channels with no profane messages", async () => {
-    let result = init(50, 0);
-    await result[0].start();
-    assert.strictEqual(getDeleted(result[1]).size, 0);
-  });
-
-  it(`should find n messages containing profanity`, async () => {
+  it(`deletes messages containing profanity`, async () => {
     let result = init(200, 10);
     await result[0].start();
     assert.strictEqual(getDeleted(result[1]).size, result[2]);
   });
 
-  // In case Discord.js Message.delete() behavior is changed in the future
-  it("should not remove elements from the collection", async () => {
-    let result = init(10, 0);
-    const initialSize = result[1].messages.coll.size;
-    await result[0].start()
-    assert.strictEqual(initialSize, result[1].messages.coll.size);
+  it("deletes profane delimiter messages", async () => {
+    let result = init(100, 1);
+    await result[0].start();
+    assert(result[1].messages.coll.first().deleted);
   });
 });
 
 describe("#clean.js: authorize()", () => {
   let commandMessage = init(0, 0)[1].messages.coll.last();
 
-  it("should reject unprivileged member", () => {
+  it("rejects unprivileged members", () => {
     commandMessage.member.setPermissions(false, false, false);
     assert(!authorize(commandMessage));
   });
 
-  it("should reject privileged, but insufficient, member", () => {
+  it("rejects privileged, but insufficient, members", () => {
     commandMessage.member.setPermissions(false, true, false);
     assert(!authorize(commandMessage));
     commandMessage.member.setPermissions(false, false, true);
     assert(!authorize(commandMessage));
   });
 
-  it("should accept privileged and sufficient member", () => {
+  it("accept privileged and sufficient members", () => {
     commandMessage.member.setPermissions(false, true, true);
     assert(authorize(commandMessage));
   });
 
-  it("should accept admin member", () => {
+  it("accept an admin members", () => {
     commandMessage.member.setPermissions(true, false, false);
     assert(authorize(commandMessage));
+  });
+});
+
+describe("#clean.js: execute()", () => {
+  let commandMessage = init(0, 0)[1].messages.coll.last();
+  let argumentConfig = {
+    boolean: ["append", "blocks", "links", "quotes"],
+    alias: {a: "append", b: "blocks", l: "links", q: "quotes"}
+  };
+
+  it("reject commands with a mix of valid and invalid arguments", async () => {
+    commandMessage.content = "!clean --quotes -z";
+    let args = parse(commandMessage.content.split(' ').slice(1), argumentConfig);
+    await execute(commandMessage, args);
+    assert.strictEqual(commandMessage.lastReply, "Git gud.");
+  });
+
+  it("accept default clean", async () => {
+    commandMessage.content = "!clean";
+    let args = parse(commandMessage.content.split(' ').slice(1), argumentConfig);
+    await execute(commandMessage, args);
+    assert.strictEqual(commandMessage.lastReply, "Cleaning finished.");
+  });
+
+  it("accept any combination of valid arguments", async () => {
+    commandMessage.content = "!clean -blq able baker charlie";
+    let args = parse(commandMessage.content.split(' ').slice(1), argumentConfig);
+    await execute(commandMessage, args);
+    assert.strictEqual(commandMessage.lastReply, "Cleaning finished.");
   });
 });
