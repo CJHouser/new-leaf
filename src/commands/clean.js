@@ -1,19 +1,28 @@
 const Cleaner = require("../classes/Cleaner");
+const parse = require("minimist");
+
+let parseConfig = {
+  boolean: ["blocks", "links", "quotes"],
+  alias: {b: "blocks", q: "quotes", l: "links"}
+};
 
 module.exports = {
   name: "!clean",
   description: "Removes messages containing profanity from a Discord text channel.",
   async execute(message) {
-    message.reply("Cleaning started.");
-    const cleaner = new Cleaner(message);
-    await cleaner.start();
-    message.reply("Cleaning finished.");
+    let args = parse(message.content.split(' ').slice(1), parseConfig);
+    if (args && Object.keys(args).length == parseConfig.boolean.length + Object.keys(parseConfig.alias).length + 1) {
+      const cleaner = new Cleaner(message, args)
+      message.reply("Cleaning started.");
+      await cleaner.start();
+      message.reply("Cleaning finished.");
+    }
+    else {
+      message.reply("Git gud.");
+    }
   },
   authorize(message) {
     const permissions = message.member.permissionsIn(message.channel);
-    // The second parameter of .has() allows admin privileges to override
-    const manage_messages = permissions.has("MANAGE_MESSAGES", true);
-    const read_message_history = permissions.has("READ_MESSAGE_HISTORY", true);
-    return manage_messages && read_message_history;
-  }
+    return permissions.has(["MANAGE_MESSAGES", "READ_MESSAGE_HISTORY"], true);
+  },
 };
