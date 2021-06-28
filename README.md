@@ -14,12 +14,6 @@ A standard clean command will target [a precompiled list of profane words](https
 Target only specific words for deletion:
 > !clean apple banana orange
 
-Stop a cleaning:
-> !stop
-
-See how many messages have been checked for profanity:
-> !progress
-
 ---
 
 ## Options
